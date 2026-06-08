@@ -29,11 +29,21 @@ Astro.response.headers.set(
   'public, max-age=60, stale-while-revalidate=600'
 );
 
+if (Astro.url.pathname.endsWith('.json/')) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
+}
+
 const { username: slugParam } = Astro.params;
 const locale = getLocaleFromPath(Astro.url.pathname);
 
 if (!slugParam) {
-  return Astro.redirect('/workflows/');
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 // If URL contains a share_id suffix, this is a workflow detail page — not a creator profile.
@@ -51,7 +61,10 @@ if (detailShareId) {
     if (!is404) {
       console.error('Hub API error on ISR detail:', err);
     }
-    return Astro.redirect('/workflows/');
+    return new Response(null, {
+      status: 404,
+      statusText: 'Not found'
+    });
   }
 }
 
@@ -60,13 +73,14 @@ let displayName = slugParam;
 let avatarUrl: string | null = null;
 let description = '';
 let websiteUrls: string[] = [];
+let profileExists = true;
 try {
   const profile = await getProfile(slugParam);
   displayName = profile.display_name || slugParam;
   avatarUrl = profile.avatar_url || null;
   description = profile.description || '';
   websiteUrls = profile.website_urls || [];
-} catch {
+} catch (err) {
   // Profile endpoint unavailable — fall back to cached profile from index
   const profiles = await getProfileCache();
   const cached = profiles.get(slugParam);
@@ -75,6 +89,8 @@ try {
     avatarUrl = cached.avatar_url || null;
     description = cached.description || '';
     websiteUrls = cached.website_urls || [];
+  } else {
+    profileExists = false;
   }
 }
 
@@ -90,9 +106,12 @@ try {
   // Index API failed — show empty grid
 }
 
-// If no profile and no workflows, redirect
-if (!displayName && serialized.length === 0) {
-  return Astro.redirect('/workflows/');
+// If no profile and no workflows, return 404
+if (!profileExists && serialized.length === 0) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const canonicalUrl = absoluteUrl(`/workflows/${slugParam}/`);

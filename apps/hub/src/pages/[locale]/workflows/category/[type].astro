@@ -31,16 +31,29 @@ const categoryTranslationKeys: Record<MediaType, string> = {
   '3d': 'category.3d',
 };
 
+if (Astro.url.pathname.endsWith('.json/')) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
+}
+
 const { locale, type } = Astro.params;
 
 // Validate locale
 if (!locale || !LOCALES.includes(locale as Locale) || locale === DEFAULT_LOCALE) {
-  return Astro.redirect(`/workflows/category/${type || ''}/`);
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 // Validate type
 if (!type || !validTypes.includes(type as MediaType)) {
-  return Astro.redirect(`/${locale}/workflows/`);
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const typedLocale = locale as Locale;
@@ -67,6 +80,13 @@ try {
     .filter((tmpl) => tmpl.data.mediaType === mediaType)
     .sort((a, b) => (b.data.usage || 0) - (a.data.usage || 0))
     .map((tmpl) => serializeCollectionEntry(tmpl.data, profiles));
+}
+
+if (templates.length === 0) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const basePath = categoryPath(mediaType);

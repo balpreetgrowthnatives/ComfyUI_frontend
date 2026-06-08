@@ -23,11 +23,21 @@ import { badgeVariants } from '../../../../components/ui/badge';
 import { listWorkflowIndex, getProfileCache, serializeIndexEntry, serializeCollectionEntry } from '../../../../lib/hub-api';
 import type { SerializedTemplate } from '../../../../lib/hub-api';
 
+if (Astro.url.pathname.endsWith('.json/')) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
+}
+
 const { locale, name } = Astro.params;
 
 // Validate locale
 if (!locale || !LOCALES.includes(locale as Locale) || locale === DEFAULT_LOCALE) {
-  return Astro.redirect(`/workflows/model/${name || ''}/`);
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const typedLocale = locale as Locale;
@@ -50,7 +60,10 @@ const matchingTemplates = allTemplates.filter((tmpl) =>
 );
 
 if (matchingTemplates.length === 0) {
-  return Astro.redirect(`/${locale}/workflows/`);
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 // Get display name from the first matching model

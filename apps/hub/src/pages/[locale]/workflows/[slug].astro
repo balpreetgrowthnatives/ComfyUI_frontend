@@ -29,17 +29,30 @@ Astro.response.headers.set(
   'public, max-age=60, stale-while-revalidate=600'
 );
 
+if (Astro.url.pathname.endsWith('.json/')) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
+}
+
 const { locale, slug } = Astro.params;
 
 // Validate locale
 if (!locale || !LOCALES.includes(locale as Locale) || locale === DEFAULT_LOCALE) {
-  return Astro.redirect('/workflows/');
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const typedLocale = locale as Locale;
 
 if (!slug) {
-  return Astro.redirect(`/${locale}/workflows/`);
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 // If URL contains a share_id suffix, this is a workflow detail page — not a creator profile.
@@ -57,7 +70,10 @@ if (detailShareId) {
     if (!is404) {
       console.error('Hub API error on ISR detail:', err);
     }
-    return Astro.redirect(`/${locale}/workflows/`);
+    return new Response(null, {
+      status: 404,
+      statusText: 'Not found'
+    });
   }
 }
 
@@ -88,13 +104,14 @@ let displayName = slug;
 let avatarUrl: string | null = null;
 let description = '';
 let websiteUrls: string[] = [];
+let profileExists = true;
 try {
   const profile = await getProfile(slug);
   displayName = profile.display_name || slug;
   avatarUrl = profile.avatar_url || null;
   description = profile.description || '';
   websiteUrls = profile.website_urls || [];
-} catch {
+} catch (err) {
   // Profile endpoint unavailable — fall back to cached profile from index
   const cachedProfiles = await getProfileCache();
   const cached = cachedProfiles.get(slug);
@@ -103,6 +120,8 @@ try {
     avatarUrl = cached.avatar_url || null;
     description = cached.description || '';
     websiteUrls = cached.website_urls || [];
+  } else {
+    profileExists = false;
   }
 }
 
@@ -119,9 +138,12 @@ try {
   // Index API failed — show empty grid
 }
 
-// If no profile and no workflows and not a detail page, redirect
-if (!isDetailPage && !displayName && serialized.length === 0) {
-  return Astro.redirect(`/${locale}/workflows/`);
+// If no profile and no workflows and not a detail page, return 404
+if (!isDetailPage && !profileExists && serialized.length === 0) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not found'
+  });
 }
 
 const canonicalUrl = absoluteUrl(`/workflows/${slug}/`);
