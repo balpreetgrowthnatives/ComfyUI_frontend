@@ -113,8 +113,24 @@ export const useNodeOutputStore = defineStore('nodeOutput', () => {
     return outputs.images
       .filter((image) => image != null)
       .map((image) => {
-        const params = new URLSearchParams(image)
-        return api.apiURL(`/view?${params}${previewParam}${rand}`)
+        const params = new URLSearchParams()
+        if (image.filename) params.set('filename', image.filename)
+        if (image.type) params.set('type', image.type)
+        if (image.subfolder) params.set('subfolder', image.subfolder)
+
+        const appendQueryParams = (p: URLSearchParams, queryStr: string) => {
+          if (!queryStr) return
+          const normalized = queryStr.replace(/^[&?]/, '')
+          const tempParams = new URLSearchParams(normalized)
+          for (const [key, value] of tempParams.entries()) {
+            p.set(key, value)
+          }
+        }
+
+        appendQueryParams(params, previewParam)
+        appendQueryParams(params, rand)
+
+        return api.apiURL(`/view?${params.toString()}`)
       })
   }
 

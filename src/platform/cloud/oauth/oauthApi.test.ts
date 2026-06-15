@@ -59,9 +59,7 @@ describe('fetchOAuthConsentChallenge', () => {
     await fetchOAuthConsentChallenge('id with spaces&injected=evil')
 
     const url = fetchSpy.mock.calls[0]?.[0] as string
-    expect(url).toContain(
-      'oauth_request_id=id%20with%20spaces%26injected%3Devil'
-    )
+    expect(url).toContain('oauth_request_id=id+with+spaces%26injected%3Devil')
   })
 
   it('throws OAuthApiError with status on non-2xx', async () => {

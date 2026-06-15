@@ -3,8 +3,8 @@ import type { ImageRef, ImageLayer } from '@/stores/maskEditorDataStore'
 import type { LGraphNode } from '@/lib/litegraph/src/litegraph'
 import { useNodeOutputStore } from '@/stores/nodeOutputStore'
 import { isCloud } from '@/platform/distribution/types'
+import { useSettingStore } from '@/platform/settings/settingStore'
 import { api } from '@/scripts/api'
-import { app } from '@/scripts/app'
 import { parseImageWidgetValue } from '@/utils/imageUtil'
 
 export function extractWidgetStringValue(value: unknown): string | undefined {
@@ -71,12 +71,15 @@ function mkFileUrl(props: { ref: ImageRef; preview?: boolean }): string {
     params.set('type', props.ref.type)
   }
 
-  const pathPlusQueryParams = api.apiURL(
-    '/view?' +
-      params.toString() +
-      app.getPreviewFormatParam() +
-      app.getRandParam()
-  )
+  const previewFormat = useSettingStore().get('Comfy.PreviewFormat')
+  if (previewFormat) {
+    params.set('preview', previewFormat)
+  }
+  if (!isCloud) {
+    params.set('rand', Math.random().toString())
+  }
+
+  const pathPlusQueryParams = api.apiURL('/view?' + params.toString())
   const imageElement = new Image()
   imageElement.crossOrigin = 'anonymous'
   imageElement.src = pathPlusQueryParams
@@ -121,8 +124,9 @@ export function useMaskEditorLoader() {
       let maskLayersFromApi: MaskLayersResponse | undefined
       if (isCloud) {
         try {
+          const queryParams = new URLSearchParams({ filename: fileToQuery })
           const response = await api.fetchApi(
-            `/files/mask-layers?filename=${fileToQuery}`
+            `/files/mask-layers?${queryParams.toString()}`
           )
           if (response.ok) {
             maskLayersFromApi = await response.json()

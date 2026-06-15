@@ -202,7 +202,7 @@ describe(assetService.getAssetMetadata, () => {
     expect(fetchApiMock).toHaveBeenCalledWith(
       expect.stringContaining(
         '/assets/remote-metadata?url=' +
-          encodeURIComponent('https://example.com/foo bar?x=1')
+          'https%3A%2F%2Fexample.com%2Ffoo+bar%3Fx%3D1'
       )
     )
   })

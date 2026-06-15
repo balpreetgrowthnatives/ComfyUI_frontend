@@ -118,13 +118,11 @@ function isValidWorkspace(value: unknown): value is OAuthWorkspace {
 export async function fetchOAuthConsentChallenge(
   oauthRequestId: string
 ): Promise<OAuthConsentChallenge> {
-  const response = await fetch(
-    `/oauth/authorize?oauth_request_id=${encodeURIComponent(oauthRequestId)}`,
-    {
-      method: 'GET',
-      credentials: 'include'
-    }
-  )
+  const params = new URLSearchParams({ oauth_request_id: oauthRequestId })
+  const response = await fetch(`/oauth/authorize?${params.toString()}`, {
+    method: 'GET',
+    credentials: 'include'
+  })
 
   if (!response.ok) {
     throw new OAuthApiError(await readErrorMessage(response), response.status)

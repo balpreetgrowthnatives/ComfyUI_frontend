@@ -111,7 +111,9 @@ export class ResultItemImpl {
   }
 
   get urlWithTimestamp(): string {
-    return `${this.url}&t=${+new Date()}`
+    const params = new URLSearchParams(this.urlParams)
+    params.set('t', (+new Date()).toString())
+    return api.apiURL('/view?' + params.toString())
   }
 
   get isVhsFormat(): boolean {
