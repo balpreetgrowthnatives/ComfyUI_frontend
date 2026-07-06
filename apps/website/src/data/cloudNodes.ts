@@ -34,7 +34,7 @@ export interface NodesSnapshot {
   packs: Pack[]
 }
 
-export type GridPackNode = Pick<PackNode, 'name' | 'displayName' | 'category'>
+type GridPackNode = Pick<PackNode, 'name' | 'displayName' | 'category'>
 
 export type GridPack = Pick<
   Pack,
